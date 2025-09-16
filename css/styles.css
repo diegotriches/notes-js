@@ -123,17 +123,26 @@ header {
     border-radius: 3px;
 }
 
+.card-notas .bi-pin:hover {
+    color: #333;
+    background-color: #fff;
+    transition: 0.3s;
+}
+
 .card-notas .bi-x.lg,
 .card-notas .bi-file-earmark-plus {
     position: absolute;
     right: 10px;
-    top: 10px;
     font-size: 0.9rem;
     padding: 5px;
     transition: 0.3s;
     color: #555;
     cursor: pointer;
     opacity: 1;
+}
+
+.card-notas .bi-x.lg {
+    top: 10px;
 }
 
 .card-notas .bi-file-earmark-plus {
