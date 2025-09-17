@@ -157,3 +157,8 @@ header {
 .card-notas.fixed {
     background-color: #333;
 }
+
+.card-notas.fixed .bi-x.lg,
+.card-notas.fixed .bi-file-earmark-plus {
+    display: none;
+}
