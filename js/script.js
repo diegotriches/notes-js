@@ -6,32 +6,28 @@ const exportBtn = document.querySelector("#exports-notes");
 
 let notes = []; // Armazena as notas na memória.
 
-searchInput.addEventListener("keydown", (e) => {
+loadNotes();
+
+searchInput.addEventListener("keydown", (e) => { // Pesquisa ao pressionar Enter
     if (e.key === "Enter") {
-
         const searchTerm = searchInput.value.toLowerCase();
-        const notes = document.querySelectorAll(".card-notas");
+        const notesElements = document.querySelectorAll(".card-notas");
 
-        notes.forEach((note) => {
+        notesElements.forEach((note) => {
             const content = note.querySelector("textarea").value.toLowerCase();
-
-            if (content.includes(searchTerm)) {
-                note.style.display = "block";
-            } else {
-                note.style.display = "none";
-            }
+            note.style.display = content.includes(searchTerm) ? "block" : "none";
         });
 
-        searchInput.value = "";
+        searchInput.value = ""; // Limpa o input.
     }
 });
 
-exportBtn.addEventListener("click", () => {
-    const notes = document.querySelectorAll(".card-notas");
+exportBtn.addEventListener("click", () => { // Exportar o CSV
+    const notesElements = document.querySelectorAll(".card-notas");
 
     let csvContent = "data:text/csv;charset=utf-8,Id,Conteudo,Fixada\n";
 
-    notes.forEach((note) => {
+    notesElements.forEach((note) => {
         const id = note.getAttribute("data-id") || "";
         const content = note.querySelector("textarea").value.replace(/(\r\n|\n|\r)/gm, "");
         const fixed = note.classList.contains("fixed") ? "Sim" : "Não";
@@ -49,12 +45,8 @@ exportBtn.addEventListener("click", () => {
     document.body.removeChild(link);
 });
 
-addNoteBtn.addEventListener("click", () => {
-    const content = noteInput.value;
-
-    if (!content) {
-        return;
-    }
+addNoteBtn.addEventListener("click", () => { // Adicionar anotação.
+    if (!noteInput.value.trim()) return;
 
     const noteObject = { // Criação do objeto "anotação". Determina quais informações ele vai receber.
         id: Date.now(),
@@ -62,15 +54,16 @@ addNoteBtn.addEventListener("click", () => {
         fixed: false
     };
 
-    notes.push(noteObject); // Adiciona ao array.
-
-    const noteElement = createNote(noteObject.id, noteObject.content) // noteElement - Cria a função createNote e usa as informações de ID e conteúdo da noteObject.
+    const noteElement = createNote(noteObject.id, noteObject.content, noteObject.fixed) // noteElement - Cria a função createNote e usa as informações de ID e conteúdo da noteObject.
     notasContainer.appendChild(noteElement); // Insere as informações de noteElement em notasContainer.
 
+    notes.push(noteObject); // Adiciona ao array.
+
+    saveNotes(); // Salva no localStorage.
     noteInput.value = ""; // Limpa o input depois de adicionar.
 });
 
-function createNote(id, content, fixed) {
+function createNote(id, content, fixed) { // Criação da nota.
     const element = document.createElement("div"); // Cria uma div.
     element.classList.add("card-notas"); // Define a classe da div.
     element.setAttribute("data-id", id);
@@ -78,6 +71,14 @@ function createNote(id, content, fixed) {
     const textarea = document.createElement("textarea"); // Cria uma nova textarea.
     textarea.value = content; // Informa de onde vem a informação que a textarea vai receber.
     element.appendChild(textarea); // Insere a informação em textarea.
+
+    textarea.addEventListener("input", () => {
+        const note = notes.find(note => note.id === id);
+        if (note) {
+            note.content = textarea.value;
+            saveNotes();
+        }
+    });
 
     const pinIcon = document.createElement("i");
     pinIcon.classList.add(...["bi", "bi-pin"]);
@@ -95,27 +96,28 @@ function createNote(id, content, fixed) {
         element.classList.add("fixed");
     }
 
-    element.querySelector(".bi-file-earmark-plus").addEventListener("click", () => {
+    duplicateIcon.addEventListener("click", () => {
         duplicateNote(id, content);
     });
 
-    element.querySelector(".bi-x.lg").addEventListener("click", () => {
+    deleteIcon.addEventListener("click", () => {
         deleteNote(id, element);
     });
 
-    element.querySelector(".bi-pin").addEventListener("click", () => {
+    pinIcon.addEventListener("click", () => {
         toggleFixed(id, element);
     });
 
     return element; // Retorna os valores de element para o programa.
 }
 
-function deleteNote(id, element) {
+function deleteNote(id, element) { // Excluir nota
     element.remove();
     notes = notes.filter(note => note.id !== id); // Remove a anotação do array.
+    saveNotes(); // Atualiza o localStorage.
 }
 
-function duplicateNote(id, content) {
+function duplicateNote(id, content) { // Duplicar nota
     const newNote = {
         id: Date.now(),
         content: content,
@@ -126,11 +128,12 @@ function duplicateNote(id, content) {
 
     const newNoteElement = createNote(newNote.id, newNote.content, newNote.fixed);
     notasContainer.appendChild(newNoteElement); // Renderiza no container.
+
+    saveNotes();
 }
 
-function toggleFixed(id, element) {
+function toggleFixed(id, element) { // Fixar nota
     const note = notes.find(note => note.id === id); // Encontra a nota no array.
-
     if (!note) return;
 
     note.fixed = !note.fixed; // Alterna o valor de fixo.
@@ -142,4 +145,33 @@ function toggleFixed(id, element) {
         element.classList.remove("fixed");
         notasContainer.appendChild(element);
     }
+
+    saveNotes();
+}
+
+function saveNotes() { // Salva as notas no localStorage
+    if (!Array.isArray(notes)) {
+        notes = [];
+    }
+    localStorage.setItem("notes", JSON.stringify(notes));
+}
+
+function loadNotes() { // Carrega as notas no localStorage
+    let savedNotes = [];
+    try {
+        const stored = localStorage.getItem("notes");
+        if (stored) {
+            savedNotes = JSON.parse(stored);
+        }
+    } catch (e) {
+        console.error("Erro ao carregar notas do localStorage:", e);
+        savedNotes = [];
+    }
+
+    notes = savedNotes;
+
+    savedNotes.forEach(note => {
+        const noteElement = createNote(note.id, note.content, note.fixed);
+        notasContainer.appendChild(noteElement);
+    });
 }
