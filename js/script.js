@@ -26,6 +26,29 @@ searchInput.addEventListener("keydown", (e) => {
     }
 });
 
+exportBtn.addEventListener("click", () => {
+    const notes = document.querySelectorAll(".card-notas");
+
+    let csvContent = "data:text/csv;charset=utf-8,Id,Conteudo,Fixada\n";
+
+    notes.forEach((note) => {
+        const id = note.getAttribute("data-id") || "";
+        const content = note.querySelector("textarea").value.replace(/(\r\n|\n|\r)/gm, "");
+        const fixed = note.classList.contains("fixed") ? "Sim" : "Não";
+
+        csvContent += `${id}, "${content}", ${fixed}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "notas.csv");
+    document.body.appendChild(link);
+
+    link.click();
+    document.body.removeChild(link);
+});
+
 addNoteBtn.addEventListener("click", () => {
     const content = noteInput.value;
 
@@ -47,9 +70,10 @@ addNoteBtn.addEventListener("click", () => {
     noteInput.value = ""; // Limpa o input depois de adicionar.
 });
 
-function createNote(id, content, fixed = false) {
+function createNote(id, content, fixed) {
     const element = document.createElement("div"); // Cria uma div.
     element.classList.add("card-notas"); // Define a classe da div.
+    element.setAttribute("data-id", id);
 
     const textarea = document.createElement("textarea"); // Cria uma nova textarea.
     textarea.value = content; // Informa de onde vem a informação que a textarea vai receber.
